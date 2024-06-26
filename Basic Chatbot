@@ -1,0 +1,103 @@
+import tkinter as tk
+from tkinter import messagebox
+from random import choice
+import re
+
+# Define responses using a dictionary for better organization
+responses = {
+    "greeting": ["Hello! How can I assist you?", "Hi there! What can I do for you today?"],
+    "personal_name": ["Hello {}! How can I help you today?"],
+    "how_are_you": ["I'm doing great! Thank you for asking.", "I'm just a chatbot. I don't have feelings but I'm here to help."],
+    "bot_name": ["You can call me Chatbot."],
+    "bot_age": ["I am just a chatbot, I do not age."],
+    "bot_capabilities": ["I can provide information, answer questions, or just have a chat with you."],
+    "love": ["I appreciate that!", "Thank you!", "You are kind."],
+    "sports": ["I enjoy football and cricket!"],
+    "location": ["I live inside your computer."],
+    "weather": ["Weather in {} is great, like always.", "Pleasant weather here in {}.",
+                "It's really hot here in {}.", "It's very pleasant here in {}.",
+                "Sorry, I can't give you real-time information about the weather in {}."],
+    "favorite_sports_person": ["I like Cristiano Ronaldo", "I like Virat Kohli!", "I like MS Dhoni!",
+                               "I like Lionel Messi!", "I like Babar Azam!", "I like Neymar Jr.!",
+                               "I like Sachin Tendulkar!", "I like Mbappe!", "I like Shaheen Afridi!"],
+    "help": ["How can I help you?", "I am here to assist you."],
+    "default": ["I'm sorry, I did not understand that.", "Can you please rephrase that?",
+                "Can you ask me a different question?", "I prefer not to answer this.",
+                "I'm not sure what you're talking about.", "I'm not comfortable answering this question."]
+}
+
+# Compile regular expressions for efficiency
+patterns = {
+    "greeting": re.compile(r"hi|hello|hey|greetings", re.IGNORECASE),
+    "personal_name": re.compile(r"my name is (.*)", re.IGNORECASE),
+    "how_are_you": re.compile(r"how are you ?", re.IGNORECASE),
+    "bot_name": re.compile(r"your name\?", re.IGNORECASE),
+    "bot_age": re.compile(r"your age\?", re.IGNORECASE),
+    "bot_capabilities": re.compile(r"(what can|can you) do\?", re.IGNORECASE),
+    "love": re.compile(r"(love|like) you", re.IGNORECASE),
+    "sports": re.compile(r"(love|like|watch|enjoy) sports?", re.IGNORECASE),
+    "location": re.compile(r"you live\?", re.IGNORECASE),
+    "weather": re.compile(r"weather in (.+)", re.IGNORECASE),
+    "favorite_sports_person": re.compile(r"favorite (sportsperson|player)", re.IGNORECASE),
+    "help": re.compile(r"help|assist", re.IGNORECASE)
+}
+
+class ChatbotGUI:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Chatbot GUI")
+
+        self.message_history = tk.Text(root, height=20, width=50, state='disabled')
+        self.message_history.pack(pady=10)
+
+        self.user_input = tk.Entry(root, width=50)
+        self.user_input.pack(pady=10)
+
+        self.send_button = tk.Button(root, text="Send", command=self.send_message)
+        self.send_button.pack()
+
+        self.message_history.configure(state='normal')
+        self.message_history.insert('end', "Chatbot: Hello! I am your friendly chatbot. How can I assist you?\n")
+        self.message_history.configure(state='disabled')
+
+    def send_message(self):
+        user_message = self.user_input.get()
+        self.user_input.delete(0, 'end')
+
+        self.message_history.configure(state='normal')
+        self.message_history.insert('end', f"You: {user_message}\n")
+
+        # Match user input to patterns
+        matched_pattern = None
+        for pattern_name, pattern in patterns.items():
+            if pattern.match(user_message):
+                matched_pattern = pattern_name
+                break
+
+        # Generate response based on matched pattern
+        if matched_pattern:
+            if matched_pattern == "personal_name":
+                match = patterns[matched_pattern].match(user_message)
+                name = match.group(1)
+                response = choice(responses[matched_pattern]).format(name)
+            elif matched_pattern == "weather":
+                match = patterns[matched_pattern].match(user_message)
+                location = match.group(1)
+                response = choice(responses[matched_pattern]).format(location)
+            else:
+                response = choice(responses[matched_pattern])
+        else:
+            response = choice(responses["default"])
+
+        self.message_history.insert('end', f"Chatbot: {response}\n")
+        self.message_history.configure(state='disabled')
+
+        if matched_pattern == "quit":
+            self.root.destroy()
+        elif matched_pattern == "help":
+            messagebox.showinfo("Help", response)
+
+# Create the GUI
+root = tk.Tk()
+chatbot_gui = ChatbotGUI(root)
+root.mainloop()
