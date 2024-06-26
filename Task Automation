@@ -1,0 +1,96 @@
+import os
+import shutil
+from tkinter import Tk, Label, Entry, Button, StringVar, filedialog, messagebox
+from tkinter.ttk import Combobox
+from PIL import Image, ImageTk
+
+class TaskAutomationApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Task Automation with Python")
+        self.root.geometry("500x400")
+
+        # Directory selection
+        self.source_dir = StringVar()
+        self.destination_dir = StringVar()
+
+        Label(root, text="Source Directory:").grid(row=0, column=0, padx=10, pady=10)
+        Entry(root, textvariable=self.source_dir, width=50).grid(row=0, column=1, padx=10, pady=10)
+        Button(root, text="Browse", command=self.browse_source).grid(row=0, column=2, padx=10, pady=10)
+
+        Label(root, text="Destination Directory:").grid(row=1, column=0, padx=10, pady=10)
+        Entry(root, textvariable=self.destination_dir, width=50).grid(row=1, column=1, padx=10, pady=10)
+        Button(root, text="Browse", command=self.browse_destination).grid(row=1, column=2, padx=10, pady=10)
+
+        # Task selection
+        Label(root, text="Select Task:").grid(row=2, column=0, padx=10, pady=10)
+        self.task_choice = Combobox(root, values=["Rename Files", "Move Files"])
+        self.task_choice.grid(row=2, column=1, padx=10, pady=10)
+
+        # Prefix/Suffix entry for renaming
+        self.prefix_suffix = StringVar()
+        Label(root, text="Prefix/Suffix:").grid(row=3, column=0, padx=10, pady=10)
+        Entry(root, textvariable=self.prefix_suffix, width=50).grid(row=3, column=1, padx=10, pady=10)
+
+        # Execute button
+        Button(root, text="Execute", command=self.execute_task).grid(row=4, column=1, pady=20)
+
+        # Image display
+        self.image_label = Label(root)
+        self.image_label.grid(row=5, column=0, columnspan=3, pady=10)
+
+        self.load_image("C:\\path\\to\\your\\image.jpg")
+
+    def browse_source(self):
+        directory = filedialog.askdirectory()
+        self.source_dir.set(directory)
+
+    def browse_destination(self):
+        directory = filedialog.askdirectory()
+        self.destination_dir.set(directory)
+
+    def load_image(self, image_path):
+        if os.path.exists(image_path):
+            image = Image.open(image_path)
+            image = image.resize((400, 200), Image.ANTIALIAS)
+            photo = ImageTk.PhotoImage(image)
+            self.image_label.config(image=photo)
+            self.image_label.image = photo
+        else:
+            self.image_label.config(text="Image not found")
+
+    def execute_task(self):
+        source = self.source_dir.get()
+        destination = self.destination_dir.get()
+        task = self.task_choice.get()
+        prefix_suffix = self.prefix_suffix.get()
+
+        if not source or not destination or not task:
+            messagebox.showwarning("Input Error", "Please fill all the fields.")
+            return
+
+        try:
+            if task == "Rename Files":
+                self.rename_files(source, prefix_suffix)
+            elif task == "Move Files":
+                self.move_files(source, destination)
+            messagebox.showinfo("Success", f"{task} completed successfully!")
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred: {e}")
+
+    def rename_files(self, directory, prefix_suffix):
+        for filename in os.listdir(directory):
+            src = os.path.join(directory, filename)
+            dst = os.path.join(directory, prefix_suffix + filename)
+            os.rename(src, dst)
+
+    def move_files(self, source, destination):
+        for filename in os.listdir(source):
+            src = os.path.join(source, filename)
+            dst = os.path.join(destination, filename)
+            shutil.move(src, dst)
+
+if __name__ == "__main__":
+    root = Tk()
+    app = TaskAutomationApp(root)
+    root.mainloop()
