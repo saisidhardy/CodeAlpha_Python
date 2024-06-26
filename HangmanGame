@@ -1,0 +1,160 @@
+import tkinter as tk
+import random
+
+class HangmanGame:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Hangman Game")
+
+        self.words = ['python', 'hangman', 'challenge', 'programming', 'developer']
+        self.total_attempts = 6
+        self.attempts_left = self.total_attempts
+        self.score = 0
+
+        self.create_widgets()
+        self.start_new_game()
+        self.show_instructions()
+
+    def create_widgets(self):
+        self.canvas = tk.Canvas(self.root, width=400, height=300, bg='white')
+        self.canvas.pack()
+
+        self.label = tk.Label(self.root, text="Guess the word:")
+        self.label.pack()
+
+        self.word_display = tk.StringVar()
+        self.word_label = tk.Label(self.root, textvariable=self.word_display, font=('Helvetica', 24))
+        self.word_label.pack()
+
+        self.entry = tk.Entry(self.root)
+        self.entry.pack()
+        self.entry.bind("<Return>", self.guess_letter)
+
+        self.attempts_display = tk.StringVar()
+        self.attempts_label = tk.Label(self.root, textvariable=self.attempts_display)
+        self.attempts_label.pack()
+
+        self.message_display = tk.StringVar()
+        self.message_label = tk.Label(self.root, textvariable=self.message_display)
+        self.message_label.pack()
+
+        self.score_display = tk.StringVar()
+        self.score_label = tk.Label(self.root, textvariable=self.score_display)
+        self.score_label.pack()
+
+        self.restart_button = tk.Button(self.root, text="Restart", command=self.start_new_game)
+        self.restart_button.pack()
+        self.restart_button.pack_forget()
+
+        self.instructions_button = tk.Button(self.root, text="Instructions", command=self.show_instructions)
+        self.instructions_button.pack()
+
+    def show_instructions(self):
+        instructions = (
+            "Objective:\n"
+            "Guess the hidden word by suggesting letters within a limited number of attempts.\n\n"
+            "How to Play:\n"
+            "1. The game begins with a randomly selected word.\n"
+            "   - Up to 3 random letters of the word are revealed to help you get started.\n"
+            "   - The total number of characters in the word is displayed for better understanding.\n"
+            "2. Enter a single letter into the text entry box and press Enter.\n"
+            "3. If the guessed letter is correct, it will be revealed in the word.\n"
+            "4. If the guessed letter is incorrect, the hangman drawing progresses,\n"
+            "   and the number of attempts left decreases.\n"
+            "5. You win the game by correctly guessing all the letters in the word before running out of attempts.\n"
+            "6. You lose the game if you run out of attempts before guessing the word.\n"
+            "7. The 'Restart' button allows you to start a new game with a new word while keeping track of your total score.\n"
+            "8. The number of total attempts decreases with each round, making the game progressively more challenging.\n"
+            "9. The game ends when you have no more total attempts left, displaying your final score.\n\n"
+            "Controls:\n"
+            "- Text Entry: Type a single letter and press Enter to make a guess.\n"
+            "- Restart Button: Press to start a new game with a new word.\n\n"
+            "Scoring:\n"
+            "- Correctly guessed words increase your score based on the remaining attempts.\n"
+            "- The total score is cumulative across multiple rounds.\n\n"
+            "Tips:\n"
+            "- Use the initial revealed letters to help you make educated guesses.\n"
+            "- Pay attention to the length of the word to strategize your guesses.\n"
+            "- Try common letters (like vowels) early on to reveal more of the word.\n\n"
+            "Good luck, and enjoy playing Hangman!"
+        )
+        self.message_display.set(instructions)
+
+    def start_new_game(self):
+        if self.attempts_left <= 0:
+            self.message_display.set(f"Game Over! Your final score is: {self.score}")
+            self.entry.config(state='disabled')
+            self.restart_button.pack_forget()
+            return
+
+        self.word = random.choice(self.words)
+        self.guessed_letters = set(random.sample(self.word, k=min(3, len(self.word))))
+        self.attempts = self.total_attempts
+        self.entry.config(state='normal')
+        self.restart_button.pack_forget()
+        self.update_display()
+
+    def update_display(self):
+        display_word = ''.join([letter if letter in self.guessed_letters else '_' for letter in self.word])
+        self.word_display.set(f"{display_word}  (Total Characters: {len(self.word)})")
+        self.attempts_display.set(f"Attempts left in this round: {self.attempts}")
+        self.score_display.set(f"Total Score: {self.score}")
+        self.message_display.set(f"Total Attempts Remaining: {self.attempts_left}")
+
+        self.canvas.delete("all")
+        self.draw_hangman()
+
+    def draw_hangman(self):
+        if self.attempts < 6:
+            self.canvas.create_line(100, 250, 200, 250)  # base
+        if self.attempts < 5:
+            self.canvas.create_line(150, 250, 150, 50)   # pole
+        if self.attempts < 4:
+            self.canvas.create_line(150, 50, 250, 50)    # top bar
+        if self.attempts < 3:
+            self.canvas.create_line(250, 50, 250, 80)    # rope
+        if self.attempts < 2:
+            self.canvas.create_oval(230, 80, 270, 120)   # head
+        if self.attempts < 1:
+            self.canvas.create_line(250, 120, 250, 200)  # body
+            self.canvas.create_line(250, 150, 230, 170)  # left arm
+            self.canvas.create_line(250, 150, 270, 170)  # right arm
+            self.canvas.create_line(250, 200, 230, 230)  # left leg
+            self.canvas.create_line(250, 200, 270, 230)  # right leg
+
+    def guess_letter(self, event):
+        guess = self.entry.get().lower()
+        self.entry.delete(0, tk.END)
+
+        if len(guess) != 1 or not guess.isalpha():
+            self.message_display.set("Invalid input. Please enter a single letter.")
+            return
+
+        if guess in self.guessed_letters:
+            self.message_display.set("You already guessed that letter.")
+            return
+
+        if guess in self.word:
+            self.guessed_letters.add(guess)
+            self.message_display.set("Correct!")
+            if set(self.word).issubset(self.guessed_letters):
+                self.message_display.set(f"Congratulations! You guessed the word: {self.word}")
+                self.score += self.attempts
+                self.entry.config(state='disabled')
+                self.restart_button.pack()
+        else:
+            self.message_display.set("Incorrect!")
+            self.attempts -= 1
+
+        self.update_display()
+
+        if self.attempts == 0:
+            self.attempts_left -= 1
+            self.message_display.set(f"Sorry, you ran out of attempts. The word was: {self.word}")
+            self.entry.config(state='disabled')
+            self.restart_button.pack()
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    game = HangmanGame(root)
+    root.mainloop()
